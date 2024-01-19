@@ -23,8 +23,8 @@ public class DevicesService {
     public Device save(DeviceRequestDTO body){
         Device newDevice = new Device();
         newDevice.setDeviceType(body.type());
-        newDevice.setDeviceModel(body.type());
-        return this.devicesRepository.save(newDevice);
+        newDevice.setDeviceModel(body.model());
+        return devicesRepository.save(newDevice);
     }
     public Device findById(long id){
         return this.devicesRepository.findById(id).orElseThrow(()-> new DeviceNotFoundException(id));

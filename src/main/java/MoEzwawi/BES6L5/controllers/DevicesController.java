@@ -26,7 +26,7 @@ public class DevicesController {
     }
     @PostMapping
     public ResponseDTO save(@RequestBody DeviceRequestDTO body){
-        Device newDevice = this.devicesService.save(body);
+        Device newDevice = devicesService.save(body);
         return new ResponseDTO(newDevice.getDeviceId());
     }
     @DeleteMapping("/{deviceId}")
