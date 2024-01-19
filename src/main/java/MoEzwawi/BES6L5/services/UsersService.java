@@ -5,26 +5,37 @@ import MoEzwawi.BES6L5.exceptions.BadRequestException;
 import MoEzwawi.BES6L5.exceptions.UserNotFoundException;
 import MoEzwawi.BES6L5.payloads.UserRequestDTO;
 import MoEzwawi.BES6L5.repositories.UsersRepository;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
+import java.io.IOException;
 import java.util.Optional;
 
 @Service
 public class UsersService {
     @Autowired
     private UsersRepository usersRepository;
+    @Autowired
+    private Cloudinary cloudinaryUploader;
+    private boolean isTheEmailAlreadyInUse(String email){
+        return this.usersRepository.existsByEmail(email);
+    }
+    private boolean isUsernameAlreadyPresent(String username){
+        return this.usersRepository.existsByUsername(username);
+    }
     public Page<User> getUsers(int pageN,int size, String orderBy){
         Pageable pageable = PageRequest.of(pageN,size, Sort.by(orderBy));
         return usersRepository.findAll(pageable);
     }
     public User save(UserRequestDTO body){
-        if(usersRepository.existsByEmail(body.email()) || usersRepository.existsByUsername(body.username())){
+        if(this.isTheEmailAlreadyInUse(body.email()) || this.isUsernameAlreadyPresent(body.username())){
             throw new BadRequestException("User already present");
         }
         User newUser = new User(body.username(), body.name(), body.surname(), body.email());
@@ -32,24 +43,31 @@ public class UsersService {
         System.out.println(newUser);
         return usersRepository.save(newUser);
     }
-    public User findById(long id) throws UserNotFoundException {
-        Optional<User> userOptional = usersRepository.findById(id);
-        if (userOptional.isPresent()) return userOptional.get();
-        else throw new UserNotFoundException(id);
+    public User findById(long id){
+        return this.usersRepository.findById(id).orElseThrow(()->new UserNotFoundException(id));
     }
     public void deleteById(long id){
         usersRepository.deleteById(id);
         System.out.println("User correctly deleted from db");
     }
-    public User patchUser(long id, UserRequestDTO partialBody){
+    public User updateUser(long id, UserRequestDTO partialBody){
         User found = this.findById(id);
         if(partialBody.name()!=null) found.setName(partialBody.name());
         if(partialBody.surname()!=null) found.setSurname(partialBody.surname());
-        if(partialBody.em()!=null) found.setEmail(partialBody.getEmail());
-        if(partialBody.getAvatarUrl()!=null) found.setAvatarUrl(partialBody.getAvatarUrl());
+        if(!this.isTheEmailAlreadyInUse(partialBody.email())) {
+            if(partialBody.email()!=null) found.setEmail(partialBody.email());
+        }
+        if(!this.isUsernameAlreadyPresent(partialBody.username())){
+            if(partialBody.username()!=null) found.setUsername(partialBody.email());
+        }
         return found;
     }
-    public long count(){
-        return usersRepository.count();
+    public User updateProfilePic(long id, MultipartFile file) throws IOException {
+        User found = this.findById(id);
+        String url = (String) cloudinaryUploader.uploader()
+                .upload(file.getBytes(), ObjectUtils.emptyMap())
+                .get("url");
+        found.setProfilePicUrl(url);
+        return found;
     }
 }

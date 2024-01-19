@@ -1,12 +1,17 @@
 package MoEzwawi.BES6L5.payloads;
 
-import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.time.LocalDateTime;
+@Getter
+@Setter
 public class ResponseDTO{
     private long id;
-    private LocalDateTime timestamp = LocalDateTime.now();
+    private LocalDateTime timestamp;
 
     public ResponseDTO(long id) {
         this.id = id;
+        this.timestamp = LocalDateTime.now();
     }
 }
