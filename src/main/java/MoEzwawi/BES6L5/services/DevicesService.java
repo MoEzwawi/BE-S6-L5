@@ -24,7 +24,7 @@ public class DevicesService {
         Device newDevice = new Device();
         newDevice.setDeviceType(body.type());
         newDevice.setDeviceModel(body.type());
-        return newDevice;
+        return this.devicesRepository.save(newDevice);
     }
     public Device findById(long id){
         return this.devicesRepository.findById(id).orElseThrow(()-> new DeviceNotFoundException(id));
